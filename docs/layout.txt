@@ -1,0 +1,95 @@
+  
+---  
+  
+# Recommended repo layout  
+  
+This layout assumes a **modular monolith** in Go.  
+  
+```text  
+openbadger/  
+├── cmd/  
+│   └── openbadger/  
+│       └── main.go  
+│  
+├── internal/  
+│   ├── app/                 # app wiring and runtime startup  
+│   ├── config/              # config loading and validation  
+│   ├── server/              # server mode bootstrap  
+│   ├── collector/           # collector mode bootstrap  
+│   ├── sensor/              # sensor mode bootstrap  
+│   ├── auth/                # UI auth and node auth  
+│   ├── enrollment/          # collector/sensor enrollment logic  
+│   ├── sites/               # site management  
+│   ├── targets/             # CIDRs, ranges, exclusions  
+│   ├── credentials/         # credential profiles + crypto handling  
+│   ├── profiles/            # scan profile definitions  
+│   ├── schedules/           # cron schedules  
+│   ├── jobs/                # job creation, leasing, status updates  
+│   ├── observations/        # observation model, validation, ingest  
+│   ├── correlation/         # asset merge logic  
+│   ├── inventory/           # asset read models and queries  
+│   ├── nodes/               # collectors/sensors heartbeats and registry  
+│   ├── protocols/  
+│   │   ├── icmp/  
+│   │   ├── snmp/  
+│   │   ├── ssh/  
+│   │   ├── winrm/  
+│   │   ├── pcap/  
+│   │   └── flow/  
+│   ├── storage/  
+│   │   ├── postgres/  
+│   │   └── migrations/  
+│   ├── api/  
+│   │   ├── http/  
+│   │   └── middleware/  
+│   ├── web/  
+│   │   ├── handlers/  
+│   │   ├── templates/  
+│   │   └── static/  
+│   ├── crypto/              # encryption helpers  
+│   ├── logging/  
+│   └── version/  
+│  
+├── migrations/              # SQL migration files  
+│  
+├── docs/  
+│   ├── vision.md  
+│   ├── architecture.md  
+│   ├── v0.1-scope.md  
+│   ├── observation-schema.md  
+│   └── adr/  
+│  
+├── deploy/  
+│   ├── compose/  
+│   │   ├── server-compose.yml  
+│   │   ├── site-collector-compose.yml  
+│   │   └── site-sensor-compose.yml  
+│   └── container/  
+│       ├── Dockerfile  
+│       └── Dockerfile.dev  
+│  
+├── scripts/  
+│   ├── dev.sh  
+│   ├── migrate.sh  
+│   └── release.sh  
+│  
+├── test/  
+│   ├── integration/  
+│   ├── fixtures/  
+│   └── lab/  
+│       ├── snmp/  
+│       ├── linux/  
+│       ├── windows/  
+│       └── flow/  
+│  
+├── .github/  
+│   └── workflows/  
+│       ├── ci.yml  
+│       └── release.yml  
+│  
+├── .editorconfig  
+├── .gitignore  
+├── Makefile  
+├── README.md  
+├── LICENSE  
+└── go.mod  
