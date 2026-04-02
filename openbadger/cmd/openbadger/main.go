@@ -15,6 +15,7 @@ import (
 	"github.com/mbaybarsk/openbadger/internal/sensor"
 	"github.com/mbaybarsk/openbadger/internal/server"
 	"github.com/mbaybarsk/openbadger/internal/storage/migrations"
+	"github.com/mbaybarsk/openbadger/internal/storage/postgres"
 	"github.com/mbaybarsk/openbadger/internal/version"
 )
 
@@ -88,7 +89,18 @@ func run(ctx context.Context, args []string) error {
 
 	switch subcommand {
 	case "server":
-		srv := server.New(cfg, logger)
+		// Initialize database connection
+		var repo *postgres.Repository
+		if cfg.Database.URL != "" {
+			var err error
+			repo, err = postgres.NewRepository(ctx, cfg.Database.URL)
+			if err != nil {
+				return fmt.Errorf("failed to connect to database: %w", err)
+			}
+			defer repo.Close()
+		}
+
+		srv := server.New(cfg, logger, repo)
 		return srv.Start(ctx)
 	case "collector":
 		return collector.Run(ctx)
