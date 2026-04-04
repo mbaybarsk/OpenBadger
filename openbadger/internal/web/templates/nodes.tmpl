@@ -1,0 +1,23 @@
+{{define "content"}}
+<section class="panel">
+  <h2>Nodes</h2>
+  <table>
+    <thead><tr><th>Name</th><th>Kind</th><th>Site</th><th>Capabilities</th><th>Version</th><th>Status</th><th>Last Heartbeat</th></tr></thead>
+    <tbody>
+    {{range .Nodes}}
+      <tr>
+        <td>{{.Name}}</td>
+        <td>{{.Kind}}</td>
+        <td>{{.SiteID}}</td>
+        <td>{{join .Capabilities ", "}}</td>
+        <td>{{.Version}}</td>
+        <td>{{.HealthStatus}}</td>
+        <td>{{formatTimePtr .LastHeartbeatAt}}</td>
+      </tr>
+    {{else}}
+      <tr><td colspan="7">No nodes available.</td></tr>
+    {{end}}
+    </tbody>
+  </table>
+</section>
+{{end}}

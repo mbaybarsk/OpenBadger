@@ -354,6 +354,12 @@ Purpose:
 - quick reachability
 - liveness evidence
 
+Initial v0.1 implementation notes:
+
+- expand collector job targets from CIDR ranges with exclusions
+- emit `icmp.alive` observations only for successful replies
+- use a small sequential raw-socket IPv4 echo implementation for reliability and minimal dependencies
+
 ### 10.2 SNMP
 
 Purpose:
@@ -526,6 +532,14 @@ All roles are containerized.
 Collectors may require:
 
 - CAP_NET_RAW for ICMP
+
+The current ICMP runner uses raw IPv4 ICMP echo sockets through the Go standard library.
+
+On Linux this typically means the collector process must run as root or have `CAP_NET_RAW`.
+
+For container deployments, add `NET_RAW` to the collector container capabilities.
+
+Without that privilege, ICMP jobs will fail with a permission error when opening the raw socket.
 
 ### 15.3 Sensor privileges
 

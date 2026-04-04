@@ -2,8 +2,10 @@ package main
 
 import (
 	"context"
+	"errors"
 	"flag"
 	"fmt"
+	"io"
 	"log/slog"
 	"os"
 	"os/signal"
@@ -12,111 +14,139 @@ import (
 
 	"github.com/mbaybarsk/openbadger/internal/collector"
 	"github.com/mbaybarsk/openbadger/internal/config"
+	"github.com/mbaybarsk/openbadger/internal/logging"
 	"github.com/mbaybarsk/openbadger/internal/sensor"
 	"github.com/mbaybarsk/openbadger/internal/server"
-	"github.com/mbaybarsk/openbadger/internal/storage/migrations"
 	"github.com/mbaybarsk/openbadger/internal/storage/postgres"
 	"github.com/mbaybarsk/openbadger/internal/version"
 )
 
+const (
+	modeServer    = "server"
+	modeCollector = "collector"
+	modeSensor    = "sensor"
+	modeMigrate   = "migrate"
+)
+
+type command struct {
+	mode        string
+	showUsage   bool
+	showVersion bool
+}
+
 func main() {
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
+	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
+	defer stop()
 
-	// Handle signals
-	sigCh := make(chan os.Signal, 1)
-	signal.Notify(sigCh, os.Interrupt, syscall.SIGTERM)
-	go func() {
-		sig := <-sigCh
-		slog.Info("Received signal, shutting down", "signal", sig)
-		cancel()
-	}()
-
-	if err := run(ctx, os.Args[1:]); err != nil {
-		slog.Error("Application failed", "error", err)
+	if err := run(ctx, os.Args[1:], os.Stdout, os.Stderr); err != nil {
+		_, _ = fmt.Fprintln(os.Stderr, err)
 		os.Exit(1)
 	}
 }
 
-func setupLogger(level string) *slog.Logger {
-	var l slog.Level
-	switch strings.ToLower(level) {
-	case "debug":
-		l = slog.LevelDebug
-	case "info":
-		l = slog.LevelInfo
-	case "warn":
-		l = slog.LevelWarn
-	case "error":
-		l = slog.LevelError
-	default:
-		l = slog.LevelInfo
-	}
-
-	opts := &slog.HandlerOptions{
-		Level: l,
-	}
-	handler := slog.NewJSONHandler(os.Stdout, opts)
-	return slog.New(handler)
-}
-
-func run(ctx context.Context, args []string) error {
-	fs := flag.NewFlagSet("openbadger", flag.ContinueOnError)
-	versionFlag := fs.Bool("version", false, "Print version and exit")
-
-	if err := fs.Parse(args); err != nil {
+func run(ctx context.Context, args []string, stdout, stderr io.Writer) error {
+	cmd, err := parseArgs(args)
+	if err != nil {
 		return err
 	}
 
-	if *versionFlag {
-		fmt.Printf("OpenBadger version %s\n", version.Version)
-		return nil
+	if cmd.showUsage {
+		_, err := fmt.Fprintln(stdout, usage())
+		return err
+	}
+
+	if cmd.showVersion {
+		_, err := fmt.Fprintf(stdout, "%s %s\n", version.Name, version.Version)
+		return err
 	}
 
 	cfg, err := config.Load()
 	if err != nil {
-		return fmt.Errorf("failed to load config: %w", err)
+		return fmt.Errorf("load config: %w", err)
 	}
 
-	logger := setupLogger(cfg.LogLevel)
+	if err := cfg.Validate(cmd.mode); err != nil {
+		return fmt.Errorf("validate config: %w", err)
+	}
+
+	logger, err := logging.New(cfg.Log, stderr)
+	if err != nil {
+		return fmt.Errorf("create logger: %w", err)
+	}
+
+	logger = logger.With("service", version.Name, "version", version.Version, "mode", cmd.mode)
 	slog.SetDefault(logger)
 
-	parsedArgs := fs.Args()
-	subcommand := cfg.Mode
-	if len(parsedArgs) > 0 {
-		subcommand = parsedArgs[0]
-	}
-
-	switch subcommand {
-	case "server":
-		// Initialize database connection
-		var repo *postgres.Repository
-		if cfg.Database.URL != "" {
-			var err error
-			repo, err = postgres.NewRepository(ctx, cfg.Database.URL)
-			if err != nil {
-				return fmt.Errorf("failed to connect to database: %w", err)
-			}
-			defer repo.Close()
-		}
-
-		srv := server.New(cfg, logger, repo)
-		return srv.Start(ctx)
-	case "collector":
-		return collector.Run(ctx)
-	case "sensor":
-		return sensor.Run(ctx)
-	case "migrate":
-		logger.Info("Starting migrate mode")
-		if cfg.Database.URL == "" {
-			return fmt.Errorf("OB_DB_URL is required for migrations")
-		}
-		if err := migrations.RunMigrations(cfg.Database.URL); err != nil {
-			return fmt.Errorf("migration failed: %w", err)
-		}
-		logger.Info("Migration complete")
-		return nil
+	switch cmd.mode {
+	case modeServer:
+		return server.Run(ctx, cfg.Server, cfg.Database, logger)
+	case modeCollector:
+		return collector.Run(ctx, cfg.Collector, logger)
+	case modeSensor:
+		return sensor.Run(ctx, cfg.Sensor, logger)
+	case modeMigrate:
+		return runMigrate(ctx, cfg.Database, logger)
 	default:
-		return fmt.Errorf("unknown subcommand: %s", subcommand)
+		return fmt.Errorf("unsupported mode %q", cmd.mode)
 	}
+}
+
+func parseArgs(args []string) (command, error) {
+	fs := flag.NewFlagSet(version.Name, flag.ContinueOnError)
+	fs.SetOutput(io.Discard)
+
+	showVersion := fs.Bool("version", false, "print version and exit")
+
+	if err := fs.Parse(args); err != nil {
+		if errors.Is(err, flag.ErrHelp) {
+			return command{showUsage: true}, nil
+		}
+
+		return command{}, fmt.Errorf("%w\n\n%s", err, usage())
+	}
+
+	if *showVersion {
+		return command{showVersion: true}, nil
+	}
+
+	if fs.NArg() != 1 {
+		return command{}, fmt.Errorf("expected exactly one mode\n\n%s", usage())
+	}
+
+	mode := strings.ToLower(fs.Arg(0))
+
+	switch mode {
+	case modeServer, modeCollector, modeSensor, modeMigrate:
+		return command{mode: mode}, nil
+	default:
+		return command{}, fmt.Errorf("unknown mode %q\n\n%s", mode, usage())
+	}
+}
+
+func runMigrate(ctx context.Context, cfg config.DatabaseConfig, logger *slog.Logger) error {
+	logger.Info("starting mode", "database_configured", cfg.URL != "")
+
+	db, err := postgres.Open(ctx, cfg.URL)
+	if err != nil {
+		return fmt.Errorf("open postgres: %w", err)
+	}
+	defer db.Close()
+
+	applied, err := postgres.ApplyMigrations(ctx, db, logger)
+	if err != nil {
+		return fmt.Errorf("apply migrations: %w", err)
+	}
+
+	logger.Info("migrate completed", "applied", applied)
+	return nil
+}
+
+func usage() string {
+	return `Usage: openbadger [--version] <mode>
+
+Modes:
+  server     start the central server runtime
+  collector  start the active collection runtime
+  sensor     start the passive sensor runtime
+  migrate    run database migrations`
 }

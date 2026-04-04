@@ -1,0 +1,23 @@
+{{define "content"}}
+<section class="panel">
+  <h2>Schedules</h2>
+  <table>
+    <thead><tr><th>Name</th><th>Site</th><th>Cron</th><th>Target Range</th><th>Scan Profile</th><th>Next Run</th><th>Last Run</th></tr></thead>
+    <tbody>
+    {{range .Schedules}}
+      <tr>
+        <td>{{.Name}}</td>
+        <td>{{.SiteID}}</td>
+        <td><code>{{.CronExpression}}</code></td>
+        <td><code>{{.TargetRangeID}}</code></td>
+        <td><code>{{.ScanProfileID}}</code></td>
+        <td>{{formatTime .NextRunAt}}</td>
+        <td>{{formatTimePtr .LastRunAt}}</td>
+      </tr>
+    {{else}}
+      <tr><td colspan="7">No schedules available.</td></tr>
+    {{end}}
+    </tbody>
+  </table>
+</section>
+{{end}}

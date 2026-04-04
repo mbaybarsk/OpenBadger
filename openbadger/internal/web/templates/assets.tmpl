@@ -1,0 +1,23 @@
+{{define "content"}}
+<section class="panel">
+  <h2>Assets</h2>
+  <table>
+    <thead><tr><th>Asset</th><th>Site</th><th>Hostnames</th><th>Serial</th><th>MACs</th><th>IPs</th><th>Last Seen</th></tr></thead>
+    <tbody>
+    {{range .Assets}}
+      <tr>
+        <td><a href="/assets/{{.Asset.ID}}"><code>{{.Asset.ID}}</code></a></td>
+        <td>{{.Asset.SiteID}}</td>
+        <td>{{join .Hostnames ", "}}</td>
+        <td>{{.SerialNumber}}</td>
+        <td>{{join .MACAddresses ", "}}</td>
+        <td>{{join .IPAddresses ", "}}</td>
+        <td>{{formatTime .Asset.LastSeen}}</td>
+      </tr>
+    {{else}}
+      <tr><td colspan="7">No assets available.</td></tr>
+    {{end}}
+    </tbody>
+  </table>
+</section>
+{{end}}

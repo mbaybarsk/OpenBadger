@@ -1,7 +1,10 @@
 .PHONY: build test lint migrate run-server run-collector run-sensor
 
+BINARY := bin/openbadger
+
 build:
-	go build -o bin/openbadger ./cmd/openbadger
+	mkdir -p $(dir $(BINARY))
+	go build -o $(BINARY) ./cmd/openbadger
 
 test:
 	go test ./...
@@ -9,11 +12,15 @@ test:
 lint:
 	golangci-lint run
 
+migrate: build
+	@if [ -z "$$OPENBADGER_DATABASE_URL" ]; then echo "OPENBADGER_DATABASE_URL is required" >&2; exit 1; fi
+	./$(BINARY) migrate
+
 run-server: build
-	./bin/openbadger server
+	./$(BINARY) server
 
 run-collector: build
-	./bin/openbadger collector
+	./$(BINARY) collector
 
 run-sensor: build
-	./bin/openbadger sensor
+	./$(BINARY) sensor

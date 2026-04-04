@@ -299,6 +299,7 @@ v0.1 includes:
   
 The following are explicitly out of scope for v0.1:  
   
+- software inventory
 - software license management  
 - patch management  
 - vulnerability scanning  

@@ -1,0 +1,56 @@
+{{define "content"}}
+<section class="stack">
+  <div class="panel">
+    <h2>Asset Detail</h2>
+    <dl>
+      <dt>ID</dt><dd><code>{{.Detail.Asset.ID}}</code></dd>
+      <dt>Site</dt><dd>{{.Detail.Asset.SiteID}}</dd>
+      <dt>Provisional</dt><dd>{{if .Detail.Asset.Provisional}}yes{{else}}no{{end}}</dd>
+      <dt>First Seen</dt><dd>{{formatTime .Detail.Asset.FirstSeen}}</dd>
+      <dt>Last Seen</dt><dd>{{formatTime .Detail.Asset.LastSeen}}</dd>
+    </dl>
+  </div>
+
+  <div class="panel">
+    <h3>Identifiers</h3>
+    <table>
+      <thead><tr><th>Kind</th><th>Value</th><th>First Seen</th><th>Last Seen</th></tr></thead>
+      <tbody>
+      {{range .Detail.Identifiers}}
+        <tr><td>{{.Kind}}</td><td><code>{{.Value}}</code></td><td>{{formatTime .FirstSeen}}</td><td>{{formatTime .LastSeen}}</td></tr>
+      {{else}}
+        <tr><td colspan="4">No identifiers available.</td></tr>
+      {{end}}
+      </tbody>
+    </table>
+  </div>
+
+  <div class="panel">
+    <h3>Addresses</h3>
+    <table>
+      <thead><tr><th>Type</th><th>Value</th><th>First Seen</th><th>Last Seen</th></tr></thead>
+      <tbody>
+      {{range .Detail.Addresses}}
+        <tr><td>{{.Type}}</td><td><code>{{.Value}}</code></td><td>{{formatTime .FirstSeen}}</td><td>{{formatTime .LastSeen}}</td></tr>
+      {{else}}
+        <tr><td colspan="4">No addresses available.</td></tr>
+      {{end}}
+      </tbody>
+    </table>
+  </div>
+
+  <div class="panel">
+    <h3>Sightings</h3>
+    <table>
+      <thead><tr><th>ID</th><th>Type</th><th>Observed At</th><th>Source</th></tr></thead>
+      <tbody>
+      {{range .Detail.Sightings}}
+        <tr><td><code>{{.SightingID}}</code></td><td>{{.ObservationType}}</td><td>{{formatTime .ObservedAt}}</td><td>{{.SourceProtocol}}</td></tr>
+      {{else}}
+        <tr><td colspan="4">No sightings available.</td></tr>
+      {{end}}
+      </tbody>
+    </table>
+  </div>
+</section>
+{{end}}

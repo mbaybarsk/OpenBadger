@@ -1,0 +1,67 @@
+{{define "content"}}
+<section>
+  <h2>Overview</h2>
+  <div class="summary">
+    <div class="panel"><div class="muted">Nodes</div><strong>{{.NodeCount}}</strong></div>
+    <div class="panel"><div class="muted">Jobs</div><strong>{{.JobCount}}</strong></div>
+    <div class="panel"><div class="muted">Schedules</div><strong>{{.ScheduleCount}}</strong></div>
+    <div class="panel"><div class="muted">Assets</div><strong>{{.AssetCount}}</strong></div>
+  </div>
+
+  <div class="panel">
+    <h3>Recent Nodes</h3>
+    <table>
+      <thead><tr><th>Name</th><th>Kind</th><th>Site</th><th>Status</th><th>Last Heartbeat</th></tr></thead>
+      <tbody>
+      {{range .RecentNodes}}
+        <tr><td>{{.Name}}</td><td>{{.Kind}}</td><td>{{.SiteID}}</td><td>{{.HealthStatus}}</td><td>{{formatTimePtr .LastHeartbeatAt}}</td></tr>
+      {{else}}
+        <tr><td colspan="5">No nodes available.</td></tr>
+      {{end}}
+      </tbody>
+    </table>
+  </div>
+
+  <div class="panel">
+    <h3>Recent Jobs</h3>
+    <table>
+      <thead><tr><th>ID</th><th>Site</th><th>Capability</th><th>Status</th><th>Updated</th></tr></thead>
+      <tbody>
+      {{range .RecentJobs}}
+        <tr><td><code>{{.ID}}</code></td><td>{{.SiteID}}</td><td>{{.Capability}}</td><td>{{.Status}}</td><td>{{formatTime .UpdatedAt}}</td></tr>
+      {{else}}
+        <tr><td colspan="5">No jobs available.</td></tr>
+      {{end}}
+      </tbody>
+    </table>
+  </div>
+
+  <div class="panel">
+    <h3>Upcoming Schedules</h3>
+    <table>
+      <thead><tr><th>Name</th><th>Site</th><th>Cron</th><th>Next Run</th><th>Enabled</th></tr></thead>
+      <tbody>
+      {{range .UpcomingSchedules}}
+        <tr><td>{{.Name}}</td><td>{{.SiteID}}</td><td><code>{{.CronExpression}}</code></td><td>{{formatTime .NextRunAt}}</td><td>{{if .Enabled}}yes{{else}}no{{end}}</td></tr>
+      {{else}}
+        <tr><td colspan="5">No schedules available.</td></tr>
+      {{end}}
+      </tbody>
+    </table>
+  </div>
+
+  <div class="panel">
+    <h3>Recent Assets</h3>
+    <table>
+      <thead><tr><th>Asset</th><th>Site</th><th>Hostnames</th><th>IPs</th><th>Last Seen</th></tr></thead>
+      <tbody>
+      {{range .RecentAssets}}
+        <tr><td><a href="/assets/{{.Asset.ID}}"><code>{{.Asset.ID}}</code></a></td><td>{{.Asset.SiteID}}</td><td>{{join .Hostnames ", "}}</td><td>{{join .IPAddresses ", "}}</td><td>{{formatTime .Asset.LastSeen}}</td></tr>
+      {{else}}
+        <tr><td colspan="5">No assets available.</td></tr>
+      {{end}}
+      </tbody>
+    </table>
+  </div>
+</section>
+{{end}}

@@ -1,0 +1,23 @@
+{{define "content"}}
+<section class="panel">
+  <h2>Jobs</h2>
+  <table>
+    <thead><tr><th>ID</th><th>Site</th><th>Kind</th><th>Capability</th><th>Status</th><th>Lease Owner</th><th>Updated</th></tr></thead>
+    <tbody>
+    {{range .Jobs}}
+      <tr>
+        <td><code>{{.ID}}</code></td>
+        <td>{{.SiteID}}</td>
+        <td>{{.Kind}}</td>
+        <td>{{.Capability}}</td>
+        <td>{{.Status}}</td>
+        <td>{{if .LeaseOwnerNodeID}}{{.LeaseOwnerNodeID}}{{else}}—{{end}}</td>
+        <td>{{formatTime .UpdatedAt}}</td>
+      </tr>
+    {{else}}
+      <tr><td colspan="7">No jobs available.</td></tr>
+    {{end}}
+    </tbody>
+  </table>
+</section>
+{{end}}

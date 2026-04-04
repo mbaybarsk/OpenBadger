@@ -1,0 +1,19 @@
+{{define "content"}}
+<section class="panel" style="max-width: 420px;">
+  <h2>Admin Login</h2>
+  <p class="muted">Sign in with the configured local admin account.</p>
+  {{if .Error}}<div class="error">{{.Error}}</div>{{end}}
+  <form method="post" action="/login" class="stack">
+    <input type="hidden" name="next" value="{{.Next}}">
+    <label>
+      Username<br>
+      <input type="text" name="username" autocomplete="username" required>
+    </label>
+    <label>
+      Password<br>
+      <input type="password" name="password" autocomplete="current-password" required>
+    </label>
+    <button type="submit">Login</button>
+  </form>
+</section>
+{{end}}
