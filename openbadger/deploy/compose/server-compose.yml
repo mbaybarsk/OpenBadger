@@ -1,1 +1,43 @@
-# server-compose.yml
+services:
+  migrate:
+    build:
+      context: ../..
+      dockerfile: deploy/container/Dockerfile
+    image: openbadger:local
+    command: ["migrate"]
+    env_file:
+      - ./server.env
+    environment:
+      OPENBADGER_DATABASE_URL: ${OPENBADGER_DATABASE_URL:-postgres://openbadger:openbadger@postgres:5432/openbadger?sslmode=disable}
+    restart: "no"
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  server:
+    build:
+      context: ../..
+      dockerfile: deploy/container/Dockerfile
+    image: openbadger:local
+    command: ["server"]
+    env_file:
+      - ./server.env
+    environment:
+      OPENBADGER_DATABASE_URL: ${OPENBADGER_DATABASE_URL:-postgres://openbadger:openbadger@postgres:5432/openbadger?sslmode=disable}
+      OPENBADGER_SERVER_ADDRESS: ${OPENBADGER_SERVER_ADDRESS:-0.0.0.0:8080}
+      OPENBADGER_SERVER_ENROLLMENT_TOKEN: ${OPENBADGER_SERVER_ENROLLMENT_TOKEN}
+      OPENBADGER_SERVER_ADMIN_USERNAME: ${OPENBADGER_SERVER_ADMIN_USERNAME:-admin}
+      OPENBADGER_SERVER_ADMIN_PASSWORD: ${OPENBADGER_SERVER_ADMIN_PASSWORD}
+      OPENBADGER_SERVER_ADMIN_SESSION_SECRET: ${OPENBADGER_SERVER_ADMIN_SESSION_SECRET}
+      OPENBADGER_SERVER_CREDENTIAL_ENCRYPTION_KEY: ${OPENBADGER_SERVER_CREDENTIAL_ENCRYPTION_KEY}
+      OPENBADGER_SERVER_EXPECTED_HEARTBEAT_INTERVAL: ${OPENBADGER_SERVER_EXPECTED_HEARTBEAT_INTERVAL:-30s}
+      OPENBADGER_SERVER_STALE_AFTER_MISSED_HEARTBEATS: ${OPENBADGER_SERVER_STALE_AFTER_MISSED_HEARTBEATS:-3}
+      OPENBADGER_SERVER_OBSERVATION_RETENTION: ${OPENBADGER_SERVER_OBSERVATION_RETENTION:-720h}
+    ports:
+      - "8080:8080"
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+      migrate:
+        condition: service_completed_successfully

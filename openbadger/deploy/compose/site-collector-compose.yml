@@ -1,1 +1,24 @@
-# site-collector-compose.yml
+services:
+  collector:
+    build:
+      context: ../..
+      dockerfile: deploy/container/Dockerfile
+    image: openbadger:local
+    command: ["collector"]
+    env_file:
+      - ./site-collector.env
+    environment:
+      OPENBADGER_COLLECTOR_NAME: ${OPENBADGER_COLLECTOR_NAME:-collector-site-a}
+      OPENBADGER_COLLECTOR_SERVER_URL: ${OPENBADGER_COLLECTOR_SERVER_URL:-http://host.docker.internal:8080}
+      OPENBADGER_COLLECTOR_SITE_ID: ${OPENBADGER_COLLECTOR_SITE_ID}
+      OPENBADGER_COLLECTOR_ENROLLMENT_TOKEN: ${OPENBADGER_COLLECTOR_ENROLLMENT_TOKEN}
+      OPENBADGER_COLLECTOR_STATE_PATH: ${OPENBADGER_COLLECTOR_STATE_PATH:-/var/lib/openbadger/collector-state.json}
+      OPENBADGER_COLLECTOR_HEARTBEAT_INTERVAL: ${OPENBADGER_COLLECTOR_HEARTBEAT_INTERVAL:-30s}
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    volumes:
+      - openbadger-collector-state:/var/lib/openbadger
+    restart: unless-stopped
+
+volumes:
+  openbadger-collector-state:

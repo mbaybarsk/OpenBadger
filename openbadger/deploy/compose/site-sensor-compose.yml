@@ -1,1 +1,33 @@
-# site-sensor-compose.yml
+services:
+  sensor:
+    build:
+      context: ../..
+      dockerfile: deploy/container/Dockerfile
+    image: openbadger:local
+    command: ["sensor"]
+    env_file:
+      - ./site-sensor.env
+    environment:
+      OPENBADGER_SENSOR_NAME: ${OPENBADGER_SENSOR_NAME:-sensor-site-a}
+      OPENBADGER_SENSOR_SERVER_URL: ${OPENBADGER_SENSOR_SERVER_URL:-http://host.docker.internal:8080}
+      OPENBADGER_SENSOR_SITE_ID: ${OPENBADGER_SENSOR_SITE_ID}
+      OPENBADGER_SENSOR_ENROLLMENT_TOKEN: ${OPENBADGER_SENSOR_ENROLLMENT_TOKEN}
+      OPENBADGER_SENSOR_STATE_PATH: ${OPENBADGER_SENSOR_STATE_PATH:-/var/lib/openbadger/sensor-state.json}
+      OPENBADGER_SENSOR_INTERFACE: ${OPENBADGER_SENSOR_INTERFACE:-eth0}
+      OPENBADGER_SENSOR_HEARTBEAT_INTERVAL: ${OPENBADGER_SENSOR_HEARTBEAT_INTERVAL:-30s}
+      OPENBADGER_SENSOR_CAPTURE_WINDOW: ${OPENBADGER_SENSOR_CAPTURE_WINDOW:-10s}
+      OPENBADGER_SENSOR_READ_TIMEOUT: ${OPENBADGER_SENSOR_READ_TIMEOUT:-500ms}
+      OPENBADGER_SENSOR_PROMISCUOUS: ${OPENBADGER_SENSOR_PROMISCUOUS:-false}
+      OPENBADGER_SENSOR_SNAP_LEN: ${OPENBADGER_SENSOR_SNAP_LEN:-1600}
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    network_mode: host
+    cap_add:
+      - NET_ADMIN
+      - NET_RAW
+    volumes:
+      - openbadger-sensor-state:/var/lib/openbadger
+    restart: unless-stopped
+
+volumes:
+  openbadger-sensor-state:

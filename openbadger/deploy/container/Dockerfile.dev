@@ -1,1 +1,7 @@
-# Dockerfile.dev
+FROM golang:1.25-alpine
+
+WORKDIR /workspace
+
+RUN apk add --no-cache bash ca-certificates tzdata build-base libpcap-dev
+
+CMD ["sh", "-lc", "go build -o ./bin/openbadger ./cmd/openbadger && ./bin/openbadger --version"]

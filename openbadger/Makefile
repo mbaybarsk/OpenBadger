@@ -1,6 +1,10 @@
-.PHONY: build test lint migrate run-server run-collector run-sensor
+.PHONY: build test lint migrate run-server run-collector run-sensor install docker-build docker-up docker-down docker-logs
 
 BINARY := bin/openbadger
+PREFIX ?= /usr/local
+BINDIR ?= $(PREFIX)/bin
+DOCKER_COMPOSE ?= docker compose
+SERVER_COMPOSE_FILES := -f deploy/compose/postgres-compose.yml -f deploy/compose/server-compose.yml
 
 build:
 	mkdir -p $(dir $(BINARY))
@@ -24,3 +28,19 @@ run-collector: build
 
 run-sensor: build
 	./$(BINARY) sensor
+
+install: build
+	install -d "$(DESTDIR)$(BINDIR)"
+	install -m 0755 "$(BINARY)" "$(DESTDIR)$(BINDIR)/openbadger"
+
+docker-build:
+	$(DOCKER_COMPOSE) $(SERVER_COMPOSE_FILES) build
+
+docker-up:
+	$(DOCKER_COMPOSE) $(SERVER_COMPOSE_FILES) up -d --build
+
+docker-down:
+	$(DOCKER_COMPOSE) $(SERVER_COMPOSE_FILES) down
+
+docker-logs:
+	$(DOCKER_COMPOSE) $(SERVER_COMPOSE_FILES) logs -f server
